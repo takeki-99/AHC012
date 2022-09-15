@@ -68,8 +68,10 @@ struct Solver_t
     }
 };
 
-int calc_score()
+int CalcScore()
 {
+    int score;
+    return score;
 }
 
 int main()
