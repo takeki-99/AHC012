@@ -2,7 +2,7 @@
 using namespace std;
 const int inf = 1e9 + 7;
 double START_CLOCK;
-const double TimeLimit = 1.90;
+const double TimeLimit = 2.90;
 double GetRuntime()
 {
     return (clock() - START_CLOCK) / CLOCKS_PER_SEC;
@@ -17,10 +17,11 @@ struct Input_t
     int N, K;
     vector<int> a_1; // 1-index
     vector<int> x, y;
-    void init()
+
+    void In()
     {
-        // ifstream in("./input.in");
-        // cin.rdbuf(in.rdbuf());
+        ifstream in("./input.in");
+        cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
         a_1.resize(11);
@@ -37,21 +38,46 @@ struct Input_t
     }
 };
 
+struct Output_t
+{
+    struct line
+    {
+        int px, py, qx, qy;
+    };
+    vector<line> lines;
+
+    void Out()
+    {
+        cout << /* k= */ lines.size() << endl;
+        for (auto [px, py, qx, qy] : lines)
+        {
+            cout << px << " " << py << " " << qx << " " << qy << endl;
+        }
+    }
+};
+
 struct Solver_t
 {
     Input_t input;
     Solver_t(const Input_t &input) : input(input) {}
 
-    void Output()
+    Output_t solve()
     {
+        Output_t ret;
+        return ret;
     }
 };
+
+int calc_score()
+{
+}
 
 int main()
 {
     START_CLOCK = clock();
     Input_t input;
-    input.init();
+    input.In();
     Solver_t solver(input);
-    solver.Output();
+    Output_t output = solver.solve();
+    output.Out();
 }
