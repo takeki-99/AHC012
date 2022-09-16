@@ -62,7 +62,7 @@ struct Solver_t
     Input_t input;
     Solver_t(const Input_t &input) : input(input) {}
 
-    Output_t solve()
+    Output_t Solve()
     {
         // 縦横に直線を引き,縦線を動かして焼きなます。
         // 評価関数: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
@@ -77,25 +77,34 @@ struct Solver_t
         vector<int> sbYs;               // sbのY座標圧縮 重複削除なし
         map<int, vector<int>> sbSort_Y; // sbSort_Y[i]:= (x座標=i)のsbのy座標配列（昇順)
         // todo mapをvectorにする
-        solve_init(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbYs, sbSort_Y);
+        SolveInit(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbYs, sbSort_Y);
 
         Output_t ret;
-        for (int x : vLines)
-        {
-            ret.lines.push_back({x, 1, x, -1});
-        }
-        for (int y : hLines)
-        {
-            ret.lines.push_back({1, y, -1, y});
-        }
+        AddVLines(ret, vLines);
+        AddHLines(ret, hLines);
 
         return ret;
     }
 
-    void solve_init(Input_t &input, int &nh, int &nv,
-                    vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
-                    vector<vector<int>> &sbCount, vector<int> &sbXs, vector<int> &sbYs,
-                    map<int, vector<int>> &sbSort_Y)
+    void AddVLines(Output_t &output, const vector<int> &vLines)
+    {
+        for (int x : vLines)
+        {
+            output.lines.push_back({x - 1, -100000000 + 1, x, 100000000});
+        }
+    }
+    void AddHLines(Output_t &output, const vector<int> &hLines)
+    {
+        for (int y : hLines)
+        {
+            output.lines.push_back({-100000000 + 1, y - 1, 100000000, y});
+        }
+    }
+
+    void SolveInit(Input_t &input, int &nh, int &nv,
+                   vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
+                   vector<vector<int>> &sbCount, vector<int> &sbXs, vector<int> &sbYs,
+                   map<int, vector<int>> &sbSort_Y)
     {
         // 縦線*横線≒合計人数*4/PI になるように縦線を決める
         // 横線は8で固定
@@ -131,7 +140,7 @@ struct Solver_t
         sbCount.resize(nv, vector<int>(nh, 0));
         for (int i = 0; i < input.N; i++)
         {
-            // todo 直線上にイチゴがある場合
+            // todo 直線上にイチゴがある場合 -> 少し傾ける
             int x_index = upper_bound(vLines.begin(), vLines.end(), input.x[i]) - vLines.begin() - 1;
             int y_index = upper_bound(hLines.begin(), hLines.end(), input.y[i]) - hLines.begin() - 1;
             sbCount[x_index][y_index]++;
@@ -148,6 +157,11 @@ struct Solver_t
                 }
             }
         }
+
+        for (int i = 0; i < 11; i++)
+        {
+            cerr << "i= " << i << ", b[i]= " << b_1[i] << endl;
+        }
     }
 };
 
@@ -160,6 +174,6 @@ int main()
 
     Solver_t solver(input);
 
-    Output_t output = solver.solve();
+    Output_t output = solver.Solve();
     output.Out();
 }
