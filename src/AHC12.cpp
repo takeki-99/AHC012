@@ -68,12 +68,6 @@ struct Solver_t
     }
 };
 
-int CalcScore()
-{
-    int score = 0;
-    return score;
-}
-
 int main()
 {
     START_CLOCK = clock();
