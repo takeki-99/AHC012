@@ -70,7 +70,7 @@ struct Solver_t
 
 int CalcScore()
 {
-    int score;
+    int score = 0;
     return score;
 }
 
