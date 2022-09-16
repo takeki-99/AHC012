@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 const int inf = 1e9 + 7;
+const double PI = acos(-1);
 double START_CLOCK;
 const double TimeLimit = 2.90;
 double GetRuntime()
@@ -20,7 +21,7 @@ struct Input_t
 
     void In()
     {
-        ifstream in("./input.in");
+        ifstream in("./input2.in");
         cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
@@ -63,21 +64,102 @@ struct Solver_t
 
     Output_t solve()
     {
+        // 縦横に直線を引き,縦線を動かして焼きなます。
+        // 評価関数: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
+
+        int nh;                         // 横線の数
+        int nv;                         // 縦線の数
+        vector<int> hLines;             // 横線
+        vector<int> vLines;             // 縦線
+        vector<int> b_1;                // b[i]:=sbがi個乗っているピースの数　1-index
+        vector<vector<int>> sbCount;    // sbCount[i][j]:=(i,j)のグリッド上のsbの数
+        vector<int> sbXs;               // sbのX座標圧縮 重複削除なし
+        vector<int> sbYs;               // sbのY座標圧縮 重複削除なし
+        map<int, vector<int>> sbSort_Y; // sbSort_Y[i]:= (x座標=i)のsbのy座標配列（昇順)
+        // todo mapをvectorにする
+        solve_init(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbYs, sbSort_Y);
+
         Output_t ret;
+        for (int x : vLines)
+        {
+            ret.lines.push_back({x, 1, x, -1});
+        }
+        for (int y : hLines)
+        {
+            ret.lines.push_back({1, y, -1, y});
+        }
+
         return ret;
     }
-};
 
-int calc_score()
-{
-}
+    void solve_init(Input_t &input, int &nh, int &nv,
+                    vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
+                    vector<vector<int>> &sbCount, vector<int> &sbXs, vector<int> &sbYs,
+                    map<int, vector<int>> &sbSort_Y)
+    {
+        // 縦線*横線≒合計人数*4/PI になるように縦線を決める
+        // 横線は8で固定
+        nh = 8;
+        nv = min(int(input.N * 4 / PI / nh + 10), input.K - nh);
+
+        // 等間隔
+        for (int i = 0; i < nh; i++)
+        {
+            hLines.push_back((int)(-10000 + 20000 * (double)i / nh));
+        }
+        for (int i = 0; i < nv; i++)
+        {
+            vLines.push_back((int)(-10000 + 20000 * (double)i / nv));
+        }
+
+        sbXs.clear();
+        sbYs.clear();
+        sbSort_Y.clear();
+        for (int i = 0; i < input.N; i++)
+        {
+            sbXs.push_back(input.x[i]);
+            sbYs.push_back(input.y[i]);
+            sbSort_Y[input.x[i]].push_back(input.y[i]);
+        }
+        sort(sbXs.begin(), sbXs.end());
+        sort(sbYs.begin(), sbYs.end());
+        for (auto &[x, vec] : sbSort_Y)
+        {
+            sort(vec.begin(), vec.end());
+        }
+
+        sbCount.resize(nv, vector<int>(nh, 0));
+        for (int i = 0; i < input.N; i++)
+        {
+            // todo 直線上にイチゴがある場合
+            int x_index = upper_bound(vLines.begin(), vLines.end(), input.x[i]) - vLines.begin() - 1;
+            int y_index = upper_bound(hLines.begin(), hLines.end(), input.y[i]) - hLines.begin() - 1;
+            sbCount[x_index][y_index]++;
+        }
+
+        b_1.resize(11);
+        for (int i = 0; i < nv; i++)
+        {
+            for (int j = 0; j < nh; j++)
+            {
+                if (sbCount[i][j] < 11)
+                {
+                    b_1[sbCount[i][j]]++;
+                }
+            }
+        }
+    }
+};
 
 int main()
 {
     START_CLOCK = clock();
+
     Input_t input;
     input.In();
+
     Solver_t solver(input);
+
     Output_t output = solver.solve();
     output.Out();
 }
