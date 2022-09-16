@@ -128,28 +128,26 @@ struct Solver_t
             sort(vec.begin(), vec.end());
         }
 
-        sbCount.resize(nv, vector<int>(nh));
+        sbCount.resize(nv, vector<int>(nh, 0));
         for (int i = 0; i < input.N; i++)
         {
+            // todo 直線上にイチゴがある場合
             int x_index = upper_bound(vLines.begin(), vLines.end(), input.x[i]) - vLines.begin() - 1;
             int y_index = upper_bound(hLines.begin(), hLines.end(), input.y[i]) - hLines.begin() - 1;
             sbCount[x_index][y_index]++;
         }
 
-        b_1.resize(20);
-        for (int i = 0; i < nh; i++)
+        b_1.resize(11);
+        for (int i = 0; i < nv; i++)
         {
-            for (int j = 0; j < nv; j++)
+            for (int j = 0; j < nh; j++)
             {
-                if (sbCount[i][j] < 20)
+                if (sbCount[i][j] < 11)
                 {
                     b_1[sbCount[i][j]]++;
                 }
             }
         }
-
-        for (int i = 0; i < 20; i++)
-            cout << i << " " << b_1[i] << endl;
     }
 };
 
