@@ -73,17 +73,16 @@ struct Solver_t
         vector<int> vLines;             // 縦線
         vector<int> b_1;                // b[i]:=sbがi個乗っているピースの数　1-index
         vector<vector<int>> sbCount;    // sbCount[i][j]:=(i,j)のグリッド上のsbの数
-        vector<int> sbXs;               // sbのX座標圧縮 重複削除なし
-        vector<int> sbYs;               // sbのY座標圧縮 重複削除なし
+        vector<int> sbXs;               // sbのX座標圧縮 重複削除
         map<int, vector<int>> sbSort_Y; // sbSort_Y[i]:= (x座標=i)のsbのy座標配列（昇順)
         // todo mapをvectorにする
-        SolveInit(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbYs, sbSort_Y);
+        SolveInit(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbSort_Y);
 
-        Output_t ret;
-        AddVLines(ret, vLines);
-        AddHLines(ret, hLines);
+        Output_t best;
+        AddVLines(best, vLines);
+        AddHLines(best, hLines);
 
-        return ret;
+        return best;
     }
 
     void AddVLines(Output_t &output, const vector<int> &vLines)
@@ -103,7 +102,7 @@ struct Solver_t
 
     void SolveInit(Input_t &input, int &nh, int &nv,
                    vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
-                   vector<vector<int>> &sbCount, vector<int> &sbXs, vector<int> &sbYs,
+                   vector<vector<int>> &sbCount, vector<int> &sbXs,
                    map<int, vector<int>> &sbSort_Y)
     {
         // 縦線*横線≒合計人数*4/PI になるように縦線を決める
@@ -122,16 +121,14 @@ struct Solver_t
         }
 
         sbXs.clear();
-        sbYs.clear();
         sbSort_Y.clear();
         for (int i = 0; i < input.N; i++)
         {
             sbXs.push_back(input.x[i]);
-            sbYs.push_back(input.y[i]);
             sbSort_Y[input.x[i]].push_back(input.y[i]);
         }
         sort(sbXs.begin(), sbXs.end());
-        sort(sbYs.begin(), sbYs.end());
+        sbXs.erase(unique(sbXs.begin(), sbXs.end()), sbXs.end());
         for (auto &[x, vec] : sbSort_Y)
         {
             sort(vec.begin(), vec.end());
