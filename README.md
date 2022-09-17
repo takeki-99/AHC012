@@ -1,5 +1,5 @@
 # AHC012
-AHC012の提出コードを管理します
+[AHC012](https://atcoder.jp/contests/ahc012 "AHC012")の提出コードを管理します
 
 ## 初期解
 均等に直線を縦横に引く。
