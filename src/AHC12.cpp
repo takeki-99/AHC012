@@ -21,8 +21,8 @@ struct Input_t
 
     void In()
     {
-        ifstream in("./input2.in");
-        cin.rdbuf(in.rdbuf());
+        // ifstream in("./input.in");
+        // cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
         a_1.resize(11);
@@ -62,40 +62,167 @@ struct Solver_t
     Input_t input;
     Solver_t(const Input_t &input) : input(input) {}
 
-    Output_t solve()
+    Output_t Solve()
     {
         // 縦横に直線を引き,縦線を動かして焼きなます。
-        // 評価関数: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
+        // 評価関数Evaluate: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
 
-        int nh;                         // 横線の数
-        int nv;                         // 縦線の数
-        vector<int> hLines;             // 横線
-        vector<int> vLines;             // 縦線
-        vector<int> b_1;                // b[i]:=sbがi個乗っているピースの数　1-index
-        vector<vector<int>> sbCount;    // sbCount[i][j]:=(i,j)のグリッド上のsbの数
-        vector<int> sbXs;               // sbのX座標圧縮 重複削除なし
-        vector<int> sbYs;               // sbのY座標圧縮 重複削除なし
-        map<int, vector<int>> sbSort_Y; // sbSort_Y[i]:= (x座標=i)のsbのy座標配列（昇順)
+        srand(1);
+        int nh;                       // 横線の数
+        int nv;                       // 縦線の数
+        vector<int> hLines;           // 横線
+        vector<int> vLines;           // 縦線
+        vector<int> b_1;              // b[i]:=sbがi個乗っているピースの数　1-index
+        vector<vector<int>> sbCount;  // sbCount[i][j]:=(i,j)のグリッド上のsbの数
+        vector<int> sbXs;             // sbのX座標 重複削除 昇順
+        map<int, vector<int>> sbXtoY; // sbXtoY[i]:= (x座標=i)のsbのy座標配列（昇順)
         // todo mapをvectorにする
-        solve_init(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbYs, sbSort_Y);
 
-        Output_t ret;
-        for (int x : vLines)
+        SolveInit(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbXtoY);
+
+        int best_score_d = Evaluate(input, b_1);
+
+        // 山登り
+        while (GetRuntime() < TimeLimit)
         {
-            ret.lines.push_back({x, 1, x, -1});
-        }
-        for (int y : hLines)
-        {
-            ret.lines.push_back({1, y, -1, y});
+
+            int vi = rand() % (nv - 2) + 1; // 縦線のindex (≠0,nv-1)
+            int left = vLines[vi - 1] + 1;
+            int right = vLines[vi + 1];
+            int move_width = int(RangeRand(left, right)) - vLines[vi];
+            if (move_width == 0)
+            {
+                continue;
+            }
+            ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, move_width);
+            int tmp_score_d = Evaluate(input, b_1);
+            if (tmp_score_d > best_score_d)
+            {
+                best_score_d = tmp_score_d;
+            }
+            else
+            {
+                ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, -move_width);
+            }
         }
 
-        return ret;
+        Output_t best_output;
+        AddVLines(best_output, vLines);
+        AddHLines(best_output, hLines);
+        for (int i = 1; i <= 10; i++)
+        {
+            cerr << "i= " << i << " "
+                 << "b[i]= " << b_1[i] << endl;
+        }
+        return best_output;
     }
 
-    void solve_init(Input_t &input, int &nh, int &nv,
-                    vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
-                    vector<vector<int>> &sbCount, vector<int> &sbXs, vector<int> &sbYs,
-                    map<int, vector<int>> &sbSort_Y)
+    // vi!=0,n-1
+    void ChangeState(
+        vector<vector<int>> &sbCount, vector<int> &b_1,
+        map<int, vector<int>> &sbXtoY, const vector<int> &sbXs,
+        vector<int> &vLines, const vector<int> &hLines,
+        int vi, int move_width)
+    {
+        int old_X = vLines[vi];
+        int new_X = old_X + move_width;
+        vLines[vi] = new_X;
+
+        if (move_width > 0)
+        {
+            auto it = lower_bound(sbXs.begin(), sbXs.end(), old_X);
+            while (it != sbXs.end() && *it < new_X)
+            {
+                int y_index = 0;
+                for (int y : sbXtoY[*it])
+                {
+                    while (y_index < (int)hLines.size() && hLines[y_index] <= y)
+                    {
+                        y_index++;
+                    }
+
+                    // vi-1: x=*it上の点を増やす
+                    // vi: x=*it上の点を減らす
+                    sbCount[vi - 1][y_index - 1]++;
+                    sbCount[vi][y_index - 1]--;
+
+                    // update b_1
+                    if (sbCount[vi - 1][y_index - 1] - 1 <= 10)
+                        b_1[sbCount[vi - 1][y_index - 1] - 1]--;
+                    if (sbCount[vi - 1][y_index - 1] <= 10)
+                        b_1[sbCount[vi - 1][y_index - 1]]++;
+                    if (sbCount[vi][y_index - 1] + 1 <= 10)
+                        b_1[sbCount[vi][y_index - 1] + 1]--;
+                    if (sbCount[vi][y_index - 1] <= 10)
+                        b_1[sbCount[vi][y_index - 1]]++;
+                }
+                it++;
+            }
+        }
+        else
+        {
+            // move_widht<0
+            auto it = lower_bound(sbXs.begin(), sbXs.end(), new_X);
+            while (it != sbXs.end() && *it < old_X)
+            {
+                int y_index = 0;
+                for (int y : sbXtoY[*it])
+                {
+                    while (y_index < (int)hLines.size() && hLines[y_index] <= y)
+                    {
+                        y_index++;
+                    }
+
+                    // vi-1: x=*it上の点を減らす
+                    // vi: x=*it上の点を増やす
+                    sbCount[vi - 1][y_index - 1]--;
+                    sbCount[vi][y_index - 1]++;
+
+                    // update b_1
+                    if (sbCount[vi - 1][y_index - 1] + 1 <= 10)
+                        b_1[sbCount[vi - 1][y_index - 1] + 1]--;
+                    if (sbCount[vi - 1][y_index - 1] <= 10)
+                        b_1[sbCount[vi - 1][y_index - 1]]++;
+                    if (sbCount[vi][y_index - 1] - 1 <= 10)
+                        b_1[sbCount[vi][y_index - 1] - 1]--;
+                    if (sbCount[vi][y_index - 1] <= 10)
+                        b_1[sbCount[vi][y_index - 1]]++;
+                }
+                it++;
+            }
+        }
+    }
+
+    // sbの数 Σd×min(a[d],b[d]) を返す
+    int Evaluate(const Input_t &input, const vector<int> &b_1)
+    {
+        int score_d = 0;
+        for (int d = 1; d <= 10; d++)
+        {
+            score_d += d * min(input.a_1[d], b_1[d]);
+        }
+        return score_d;
+    }
+
+    void AddVLines(Output_t &output, const vector<int> &vLines)
+    {
+        for (int x : vLines)
+        {
+            output.lines.push_back({x - 1, -100000000 + 1, x, 100000000});
+        }
+    }
+    void AddHLines(Output_t &output, const vector<int> &hLines)
+    {
+        for (int y : hLines)
+        {
+            output.lines.push_back({-100000000 + 1, y - 1, 100000000, y});
+        }
+    }
+
+    void SolveInit(Input_t &input, int &nh, int &nv,
+                   vector<int> &hLines, vector<int> &vLines, vector<int> &b_1,
+                   vector<vector<int>> &sbCount, vector<int> &sbXs,
+                   map<int, vector<int>> &sbXtoY)
     {
         // 縦線*横線≒合計人数*4/PI になるように縦線を決める
         // 横線は8で固定
@@ -113,17 +240,15 @@ struct Solver_t
         }
 
         sbXs.clear();
-        sbYs.clear();
-        sbSort_Y.clear();
+        sbXtoY.clear();
         for (int i = 0; i < input.N; i++)
         {
             sbXs.push_back(input.x[i]);
-            sbYs.push_back(input.y[i]);
-            sbSort_Y[input.x[i]].push_back(input.y[i]);
+            sbXtoY[input.x[i]].push_back(input.y[i]);
         }
         sort(sbXs.begin(), sbXs.end());
-        sort(sbYs.begin(), sbYs.end());
-        for (auto &[x, vec] : sbSort_Y)
+        sbXs.erase(unique(sbXs.begin(), sbXs.end()), sbXs.end());
+        for (auto &[x, vec] : sbXtoY)
         {
             sort(vec.begin(), vec.end());
         }
@@ -131,7 +256,6 @@ struct Solver_t
         sbCount.resize(nv, vector<int>(nh, 0));
         for (int i = 0; i < input.N; i++)
         {
-            // todo 直線上にイチゴがある場合
             int x_index = upper_bound(vLines.begin(), vLines.end(), input.x[i]) - vLines.begin() - 1;
             int y_index = upper_bound(hLines.begin(), hLines.end(), input.y[i]) - hLines.begin() - 1;
             sbCount[x_index][y_index]++;
@@ -160,6 +284,7 @@ int main()
 
     Solver_t solver(input);
 
-    Output_t output = solver.solve();
+    Output_t output = solver.Solve();
     output.Out();
+    cerr << "Time= " << GetRuntime() << endl;
 }
