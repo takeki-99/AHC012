@@ -65,7 +65,7 @@ struct Solver_t
     Output_t Solve()
     {
         // 縦横に直線を引き,縦線を動かして焼きなます。
-        // 評価関数: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
+        // 評価関数Evaluate: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
 
         int nh;                         // 横線の数
         int nv;                         // 縦線の数
@@ -82,7 +82,7 @@ struct Solver_t
         Output_t best_output;
         AddVLines(best_output, vLines);
         AddHLines(best_output, hLines);
-        // int best_score = Evaluate();
+        int best_score_d = Evaluate(input, b_1);
 
         // 山登り
         while (GetRuntime() < TimeLimit)
@@ -92,18 +92,33 @@ struct Solver_t
             int left = 1;
             int right = 10;
             int move_width = int(RangeRand(left, right)) - vLines[vi];
-            /* Change(move_width);
-            int tmp_score=Evaluate();
+            /* ChangeState(move_width);
+            int tmp_score=Evaluate(input,b_1);
             if(tmp_score>best_score){
                 best_score=tmp_score;
             }
             else{
-                Change(-move_width);
+                ChangeState(-move_width);
             }
             */
         }
 
         return best_output;
+    }
+
+    void ChangeState()
+    {
+    }
+
+    int Evaluate(const Input_t &input, const vector<int> &b_1)
+    {
+        // sbの数 Σd×min(a[d],b[d]) を返す
+        int score_d = 0;
+        for (int d = 1; d <= 10; d++)
+        {
+            score_d += d * min(input.a_1[d], b_1[d]);
+        }
+        return score_d;
     }
 
     void AddVLines(Output_t &output, const vector<int> &vLines)
