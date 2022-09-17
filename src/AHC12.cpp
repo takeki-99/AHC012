@@ -76,13 +76,34 @@ struct Solver_t
         vector<int> sbXs;               // sbのX座標圧縮 重複削除
         map<int, vector<int>> sbSort_Y; // sbSort_Y[i]:= (x座標=i)のsbのy座標配列（昇順)
         // todo mapをvectorにする
+
         SolveInit(input, nh, nv, hLines, vLines, b_1, sbCount, sbXs, sbSort_Y);
 
-        Output_t best;
-        AddVLines(best, vLines);
-        AddHLines(best, hLines);
+        Output_t best_output;
+        AddVLines(best_output, vLines);
+        AddHLines(best_output, hLines);
+        // int best_score = Evaluate();
 
-        return best;
+        // 山登り
+        while (GetRuntime() < TimeLimit)
+        {
+            // 縦線のindex (≠0)
+            int vi = rand() % (nv - 1) + 1;
+            int left = 1;
+            int right = 10;
+            int move_width = int(RangeRand(left, right)) - vLines[vi];
+            /* Change(move_width);
+            int tmp_score=Evaluate();
+            if(tmp_score>best_score){
+                best_score=tmp_score;
+            }
+            else{
+                Change(-move_width);
+            }
+            */
+        }
+
+        return best_output;
     }
 
     void AddVLines(Output_t &output, const vector<int> &vLines)
@@ -137,7 +158,6 @@ struct Solver_t
         sbCount.resize(nv, vector<int>(nh, 0));
         for (int i = 0; i < input.N; i++)
         {
-            // todo 直線上にイチゴがある場合 -> 少し傾ける
             int x_index = upper_bound(vLines.begin(), vLines.end(), input.x[i]) - vLines.begin() - 1;
             int y_index = upper_bound(hLines.begin(), hLines.end(), input.y[i]) - hLines.begin() - 1;
             sbCount[x_index][y_index]++;
