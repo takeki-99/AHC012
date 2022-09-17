@@ -21,8 +21,8 @@ struct Input_t
 
     void In()
     {
-        ifstream in("./input2.in");
-        cin.rdbuf(in.rdbuf());
+        // ifstream in("./input2.in");
+        // cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
         a_1.resize(11);
@@ -84,11 +84,15 @@ struct Solver_t
         // 山登り
         while (GetRuntime() < TimeLimit)
         {
-            // 縦線のindex (≠0,nv-1)
-            int vi = rand() % (nv - 2) + 1;
+
+            int vi = rand() % (nv - 2) + 1; // 縦線のindex (≠0,nv-1)
             int left = vLines[vi - 1] + 1;
-            int right = vLines[vi + 1] - 1;
+            int right = vLines[vi + 1];
             int move_width = int(RangeRand(left, right)) - vLines[vi];
+            if (move_width == 0)
+            {
+                continue;
+            }
             ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, move_width);
             int tmp_score_d = Evaluate(input, b_1);
             if (tmp_score_d > best_score_d)
@@ -122,15 +126,15 @@ struct Solver_t
         int old_X = vLines[vi];
         int new_X = old_X + move_width;
         vLines[vi] = new_X;
-        if (move_width >= 0)
+        if (move_width > 0)
         {
             auto it = lower_bound(sbXs.begin(), sbXs.end(), old_X);
-            while (*it < new_X)
+            while (it != sbXs.end() && *it < new_X)
             {
                 int y_index = 0;
                 for (int y : sbXtoY[*it])
                 {
-                    while (y_index < hLines.size() && hLines[y_index] < y)
+                    while (y_index < (int)hLines.size() && hLines[y_index] <= y)
                     {
                         y_index++;
                     }
@@ -155,12 +159,12 @@ struct Solver_t
         {
             // move_widht<0
             auto it = lower_bound(sbXs.begin(), sbXs.end(), new_X);
-            while (*it < old_X)
+            while (it != sbXs.end() && *it < old_X)
             {
                 int y_index = 0;
                 for (int y : sbXtoY[*it])
                 {
-                    while (y_index < hLines.size() && hLines[y_index] < y)
+                    while (y_index < (int)hLines.size() && hLines[y_index] <= y)
                     {
                         y_index++;
                     }
