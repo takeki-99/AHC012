@@ -21,7 +21,7 @@ struct Input_t
 
     void In()
     {
-        // ifstream in("./input2.in");
+        // ifstream in("./input.in");
         // cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
@@ -66,6 +66,7 @@ struct Solver_t
     {
         // 縦横に直線を引き,縦線を動かして焼きなます。
         // 評価関数Evaluate: イチゴ(=sb)の数 Σd×min(a[d],b[d]) を最大化
+
         srand(1);
         int nh;                       // 横線の数
         int nv;                       // 縦線の数
@@ -73,7 +74,7 @@ struct Solver_t
         vector<int> vLines;           // 縦線
         vector<int> b_1;              // b[i]:=sbがi個乗っているピースの数　1-index
         vector<vector<int>> sbCount;  // sbCount[i][j]:=(i,j)のグリッド上のsbの数
-        vector<int> sbXs;             // sbのX座標 重複削除
+        vector<int> sbXs;             // sbのX座標 重複削除 昇順
         map<int, vector<int>> sbXtoY; // sbXtoY[i]:= (x座標=i)のsbのy座標配列（昇順)
         // todo mapをvectorにする
 
@@ -116,7 +117,7 @@ struct Solver_t
         return best_output;
     }
 
-    // vi>0
+    // vi!=0,n-1
     void ChangeState(
         vector<vector<int>> &sbCount, vector<int> &b_1,
         map<int, vector<int>> &sbXtoY, const vector<int> &sbXs,
@@ -126,6 +127,7 @@ struct Solver_t
         int old_X = vLines[vi];
         int new_X = old_X + move_width;
         vLines[vi] = new_X;
+
         if (move_width > 0)
         {
             auto it = lower_bound(sbXs.begin(), sbXs.end(), old_X);
@@ -138,11 +140,13 @@ struct Solver_t
                     {
                         y_index++;
                     }
+
                     // vi-1: x=*it上の点を増やす
                     // vi: x=*it上の点を減らす
                     sbCount[vi - 1][y_index - 1]++;
                     sbCount[vi][y_index - 1]--;
 
+                    // update b_1
                     if (sbCount[vi - 1][y_index - 1] - 1 <= 10)
                         b_1[sbCount[vi - 1][y_index - 1] - 1]--;
                     if (sbCount[vi - 1][y_index - 1] <= 10)
@@ -168,12 +172,13 @@ struct Solver_t
                     {
                         y_index++;
                     }
+
                     // vi-1: x=*it上の点を減らす
                     // vi: x=*it上の点を増やす
-
                     sbCount[vi - 1][y_index - 1]--;
                     sbCount[vi][y_index - 1]++;
 
+                    // update b_1
                     if (sbCount[vi - 1][y_index - 1] + 1 <= 10)
                         b_1[sbCount[vi - 1][y_index - 1] + 1]--;
                     if (sbCount[vi - 1][y_index - 1] <= 10)
@@ -188,9 +193,9 @@ struct Solver_t
         }
     }
 
+    // sbの数 Σd×min(a[d],b[d]) を返す
     int Evaluate(const Input_t &input, const vector<int> &b_1)
     {
-        // sbの数 Σd×min(a[d],b[d]) を返す
         int score_d = 0;
         for (int d = 1; d <= 10; d++)
         {
