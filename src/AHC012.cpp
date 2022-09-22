@@ -21,8 +21,8 @@ struct Input_t
 
     void In()
     {
-        // ifstream in("./input.in");
-        // cin.rdbuf(in.rdbuf());
+        ifstream in("./input.in");
+        cin.rdbuf(in.rdbuf());
 
         cin >> N >> K;
         a_1.resize(11);
@@ -82,10 +82,13 @@ struct Solver_t
 
         int best_score_d = Evaluate(input, b_1);
 
+        // for Annealing
+        const double T_h = 2.0;
+        const double T_l = 1.0;
         // 山登り
+        int counter = 0;
         while (GetRuntime() < TimeLimit)
         {
-
             int vi = rand() % (nv - 2) + 1; // 縦線のindex (≠0,nv-1)
             int left = vLines[vi - 1] + 1;
             int right = vLines[vi + 1];
@@ -96,14 +99,28 @@ struct Solver_t
             }
             ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, move_width);
             int tmp_score_d = Evaluate(input, b_1);
+
             if (tmp_score_d > best_score_d)
             {
                 best_score_d = tmp_score_d;
             }
             else
             {
-                ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, -move_width);
+                double t = GetRuntime() / TimeLimit;
+                double T = pow(T_h, 1.0 - t) * pow(T_l, t);
+                cerr << " Counter: " << counter << " T: " << T;
+                cerr << " Prob: " << exp((double)(tmp_score_d - best_score_d) / T);
+                if (RangeRand() > exp((double)(tmp_score_d - best_score_d) / T))
+                {
+                    ChangeState(sbCount, b_1, sbXtoY, sbXs, vLines, hLines, vi, -move_width);
+                }
+                else
+                {
+                    cerr << " Down ";
+                }
+                cerr << endl;
             }
+            counter++;
         }
 
         Output_t best_output;
